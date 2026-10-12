@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% load finance_format %}
+{% block title %}Recibos | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen p-5 sm:p-8 lg:p-12 max-w-7xl mx-auto">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-9">
+    <div><a href="{% url 'dashboard' %}" class="text-sm text-moss hover:underline">← Voltar ao dashboard</a><p class="text-sm text-moss font-semibold mt-8 mb-2">Emissao financeira</p><h1 class="text-4xl sm:text-5xl">{{ configuracao_documento.titulo_recibo|default:'Recibo de pagamento' }}</h1><p class="text-slate-500 mt-2">Registre o servico recebido e gere um documento pronto para enviar.</p></div>
+    {% if request.user.is_staff %}<a href="{% url 'configuracao_documentos' %}" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold hover:border-moss">Configuracao visual</a>{% endif %}
+  </div>
+  {% if messages %}{% for message in messages %}<div class="mb-6 rounded-xl bg-mint px-4 py-3 text-sm font-medium text-moss">{{ message }}</div>{% endfor %}{% endif %}
+  <div class="grid xl:grid-cols-[.85fr_1.15fr] gap-8">
+    <section class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8">
+      <h2 class="text-xl font-bold mb-1">Novo recibo</h2><p class="text-sm text-slate-500 mb-6">Preencha os dados do pagamento.</p>
+      <form method="post" class="space-y-5">{% csrf_token %}{% for field in form %}<div><label for="{{ field.id_for_label }}" class="block text-sm font-semibold mb-2">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>{% endif %}</div>{% endfor %}<button class="w-full rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">Criar recibo pendente</button></form>
+    </section>
+    <section><div class="flex items-center justify-between mb-4"><h2 class="text-xl font-bold">Recibos emitidos</h2><span class="text-sm text-slate-400">{{ recibos|length }} documento(s)</span></div><div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">{% for recibo in recibos %}<div class="p-5 border-b last:border-0 border-slate-100"><div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4"><div><div class="flex items-center gap-2"><p class="font-semibold">{{ recibo.recebedor }}</p><span class="rounded-full px-2.5 py-1 text-xs font-semibold {% if recibo.status == 'recebido' %}bg-mint text-moss{% else %}bg-amber-50 text-amber-700{% endif %}">{{ recibo.get_status_display }}</span></div><p class="text-sm text-slate-500 mt-1">{{ recibo.servico }} · {{ recibo.data_pagamento|date:'d/m/Y' }}</p></div><strong class="text-moss">R$ {{ recibo.valor|localize }}</strong></div><div class="flex flex-wrap items-center gap-3 mt-4"><a href="{% url 'recibo_editar' recibo.pk %}" class="text-sm font-semibold text-moss hover:underline">Editar</a>{% if recibo.status == 'pendente' %}<form method="post" action="{% url 'recibo_baixar' recibo.pk %}">{% csrf_token %}<button class="rounded-lg bg-moss px-3 py-2 text-sm font-semibold text-white hover:bg-ink">Dar baixa: recebi</button></form>{% else %}<span class="text-xs text-slate-400">Recebido em {{ recibo.recebido_em|date:'d/m/Y' }}</span>{% endif %}<a href="{% url 'recibo_pdf' recibo.pk %}" class="rounded-lg border border-moss px-3 py-2 text-sm font-semibold text-moss hover:bg-mint">Baixar PDF</a><form method="post" action="{% url 'recibo_excluir' recibo.pk %}" onsubmit="return confirm('Excluir este recibo?');">{% csrf_token %}<button class="text-sm font-semibold text-coral hover:underline">Excluir</button></form></div></div>{% empty %}<p class="p-10 text-center text-slate-500">Nenhum recibo emitido ainda.</p>{% endfor %}</div></section>
+  </div>
+  <section class="mt-8 rounded-2xl bg-white border border-slate-200 p-6 sm:p-8">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6"><div><p class="text-sm font-semibold text-moss uppercase tracking-wider">Cadastro permanente</p><h2 class="text-2xl font-bold mt-2">Clientes</h2><p class="text-sm text-slate-500 mt-1">Digite o CNPJ para preencher os dados automaticamente e salvar para os próximos recibos.</p></div></div>
+    <form method="post" class="grid md:grid-cols-3 gap-4" data-client-form>{% csrf_token %}<input type="hidden" name="tipo" value="cliente">{% for field in cliente_form %}<div{% if field.name == 'razao_social' or field.name == 'logradouro' %} class="md:col-span-2"{% endif %}><label for="{{ field.id_for_label }}" class="block text-sm font-semibold mb-1">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>{% endif %}</div>{% endfor %}<div class="md:col-span-3 flex items-center gap-3"><button class="rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">Salvar cliente</button><span class="text-sm text-slate-500" data-cnpj-status></span></div></form>
+    {% if clientes %}<div class="mt-8 border-t border-slate-100 pt-6"><h3 class="font-bold mb-3">Empresas cadastradas</h3><div class="grid md:grid-cols-2 gap-3">{% for cliente in clientes %}<div class="rounded-xl bg-slate-50 px-4 py-3"><div class="flex items-start justify-between gap-3"><div><p class="font-semibold">{{ cliente.nome_fantasia|default:cliente.razao_social }}</p><p class="text-sm text-slate-500 mt-1">CNPJ {{ cliente.cnpj }}{% if cliente.municipio %} · {{ cliente.municipio }}/{{ cliente.uf }}{% endif %}</p></div><div class="flex shrink-0 gap-3 text-sm"><a href="{% url 'cliente_editar' cliente.pk %}" class="font-semibold text-moss hover:underline">Editar</a><form method="post" action="{% url 'cliente_excluir' cliente.pk %}" onsubmit="return confirm('Excluir esta empresa?');">{% csrf_token %}<button class="font-semibold text-coral hover:underline">Apagar</button></form></div></div></div>{% endfor %}</div></div>{% endif %}
+  </section>
+</main>
+<style>input, select, textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .75rem 1rem; background: white; outline: none; } input:focus, select:focus, textarea:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; } .bg-ink input, .bg-ink textarea { background: white; color: #102a43; }</style>
+{{ clientes_json|json_script:"clientes-data" }}
+<script>
+  (() => {
+    const clientes = JSON.parse(document.getElementById('clientes-data').textContent);
+    const clienteSelect = document.getElementById('id_cliente');
+    const recebedorInput = document.getElementById('id_recebedor');
+    if (clienteSelect && recebedorInput) {
+      clienteSelect.addEventListener('change', () => {
+        const cliente = clientes.find((item) => String(item.id) === clienteSelect.value);
+        if (cliente) recebedorInput.value = cliente.nome_fantasia || cliente.razao_social;
+      });
+    }
+    const cnpjInput = document.querySelector('[data-cnpj="true"]');
+    const status = document.querySelector('[data-cnpj-status]');
+    if (!cnpjInput) return;
+    const fields = ['razao_social', 'nome_fantasia', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'uf', 'cep', 'email', 'telefone'];
+    const fill = (data) => fields.forEach((name) => {
+      const input = document.getElementById(`id_${name}`);
+      if (input && data[name] !== undefined) input.value = data[name] || '';
+    });
+    const lookup = async () => {
+      const digits = cnpjInput.value.replace(/\D/g, '');
+      if (digits.length !== 14) return;
+      status.textContent = 'Consultando CNPJ...';
+      try {
+        const response = await fetch(`{% url 'cliente_consultar_cnpj' %}?cnpj=${digits}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.erro || 'Consulta indisponivel.');
+        fill(data);
+        status.textContent = data.origem === 'cadastro' ? 'Cliente encontrado no seu cadastro.' : 'Dados preenchidos pela consulta publica.';
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    };
+    cnpjInput.addEventListener('blur', lookup);
+    cnpjInput.addEventListener('input', () => {
+      const digits = cnpjInput.value.replace(/\D/g, '').slice(0, 14);
+      cnpjInput.value = digits.length > 12 ? `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}` : cnpjInput.value;
+    });
+  })();
+</script>
+{% endblock %}

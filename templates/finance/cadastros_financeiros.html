@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Cadastros | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen p-5 sm:p-8 lg:p-12 max-w-6xl mx-auto">
+  <a href="{% url 'dashboard' %}" class="text-sm text-moss hover:underline">← Voltar ao dashboard</a>
+  <div class="mt-8 mb-8"><p class="text-sm text-moss font-semibold mb-2">Personalizacao</p><h1 class="text-4xl">Seus cadastros</h1><p class="text-slate-500 mt-2">Crie opcoes para organizar seus lancamentos.</p></div>
+  {% if messages %}{% for message in messages %}<div class="mb-6 rounded-xl bg-mint px-4 py-3 text-sm font-medium text-moss">{{ message }}</div>{% endfor %}{% endif %}
+  <div class="grid md:grid-cols-2 gap-8">
+    <section class="rounded-2xl bg-white border border-slate-200 p-6">
+      <h2 class="text-xl font-bold">{% if categoria_editando %}Editar categoria{% else %}Cadastrar categoria{% endif %}</h2><p class="text-sm text-slate-500 mt-1 mb-5">Exemplo: Alimentacao, Moradia ou Transporte.</p>
+      <form method="post" class="flex gap-3">{% csrf_token %}<input type="hidden" name="tipo" value="categoria">{% if categoria_editando %}<input type="hidden" name="cadastro_id" value="{{ categoria_editando.pk }}">{% endif %}{{ categoria_form.nome }}<button class="rounded-xl bg-moss px-4 py-2 font-semibold text-white hover:bg-ink">{% if categoria_editando %}Salvar{% else %}Cadastrar{% endif %}</button>{% if categoria_editando %}<a href="{% url 'cadastros_financeiros' %}" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold hover:bg-slate-50">Cancelar</a>{% endif %}</form>
+      <div class="mt-6 space-y-2">{% for categoria in categorias %}<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm"><span>{{ categoria.nome }}</span><span class="flex shrink-0 items-center gap-3"><a href="{% url 'cadastros_financeiros' %}?editar_categoria={{ categoria.pk }}" class="font-semibold text-moss hover:underline">Editar</a><form method="post" action="{% url 'categoria_excluir' categoria.pk %}" onsubmit="return confirm('Apagar esta categoria?');">{% csrf_token %}<button type="submit" class="font-semibold text-coral hover:underline">Apagar</button></form></span></div>{% empty %}<p class="text-sm text-slate-500">Nenhuma categoria cadastrada.</p>{% endfor %}</div>
+    </section>
+    <section class="rounded-2xl bg-white border border-slate-200 p-6">
+      <h2 class="text-xl font-bold">{% if forma_editando %}Editar forma de pagamento{% else %}Cadastrar forma de pagamento{% endif %}</h2><p class="text-sm text-slate-500 mt-1 mb-5">Exemplo: Nubank, Vale-alimentacao ou Debito.</p>
+      <form method="post" class="flex gap-3">{% csrf_token %}<input type="hidden" name="tipo" value="forma_pagamento">{% if forma_editando %}<input type="hidden" name="cadastro_id" value="{{ forma_editando.pk }}">{% endif %}{{ forma_form.nome }}<button class="rounded-xl bg-moss px-4 py-2 font-semibold text-white hover:bg-ink">{% if forma_editando %}Salvar{% else %}Cadastrar{% endif %}</button>{% if forma_editando %}<a href="{% url 'cadastros_financeiros' %}" class="rounded-xl border border-slate-200 px-4 py-2 font-semibold hover:bg-slate-50">Cancelar</a>{% endif %}</form>
+      <div class="mt-6 space-y-2">{% for forma in formas %}<div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm"><span>{{ forma.nome }}</span><span class="flex shrink-0 items-center gap-3"><a href="{% url 'cadastros_financeiros' %}?editar_forma_pagamento={{ forma.pk }}" class="font-semibold text-moss hover:underline">Editar</a><form method="post" action="{% url 'forma_pagamento_excluir' forma.pk %}" onsubmit="return confirm('Apagar esta forma de pagamento?');">{% csrf_token %}<button type="submit" class="font-semibold text-coral hover:underline">Apagar</button></form></span></div>{% empty %}<p class="text-sm text-slate-500">Nenhuma forma personalizada. As opcoes padrao continuam disponiveis.</p>{% endfor %}</div>
+    </section>
+  </div>
+</main>
+<style>input[type="text"] { flex: 1; min-width: 0; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .65rem .85rem; outline: none; } input[type="text"]:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; }</style>
+{% endblock %}

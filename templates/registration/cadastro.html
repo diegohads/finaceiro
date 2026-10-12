@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Criar conta | Nexsaldo{% endblock %}
+{% block content %}
+<div class="min-h-screen grid lg:grid-cols-2">
+  <section class="auth-hero hidden lg:flex p-16 text-white flex-col justify-between">
+    <div class="text-sm font-semibold tracking-[0.2em] uppercase text-mint"><span class="auth-brand-mark mr-2 inline-grid align-middle">N</span>Nexsaldo</div>
+    <div>
+      <p class="text-emerald-300 text-sm font-semibold mb-4">Comece hoje</p>
+      <h1 class="text-6xl leading-[0.98] max-w-lg">Uma visão mais leve das suas finanças.</h1>
+      <p class="text-white/65 mt-6 max-w-md text-lg">Crie sua conta e acompanhe cada entrada e saída com privacidade.</p>
+    </div>
+    <p class="text-white/40 text-sm">Contas comuns não têm acesso ao painel administrativo.</p>
+  </section>
+  <main class="flex items-center justify-center p-5 sm:p-12">
+    <div class="auth-card w-full max-w-md p-6 sm:p-10">
+      <div class="auth-brand lg:hidden mb-10"><span class="auth-brand-mark">N</span>Nexsaldo</div>
+      <p class="text-moss font-semibold text-sm mb-3">Nova conta</p>
+      <h1 class="text-4xl mb-3">Crie seu acesso</h1>
+      <p class="text-slate-500 mb-8">Seu cadastro começa como usuário comum.</p>
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="rounded-xl bg-red-50 p-4 text-sm text-red-700">{{ form.non_field_errors|striptags }}</div>{% endif %}
+        {% for field in form %}
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold mb-2">{{ field.label }}</label>
+          {% if 'password' in field.name %}<div class="relative">{{ field }}<button type="button" data-password-toggle="{{ field.id_for_label }}" aria-label="Mostrar senha" class="absolute right-3 top-1/2 -translate-y-1/2 px-1 text-lg text-slate-400 hover:text-moss">&#128065;</button></div>{% else %}{{ field }}{% endif %}
+          {% if field.help_text %}<p class="text-xs text-slate-400 mt-1">{{ field.help_text|striptags }}</p>{% endif %}
+          {% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>{% endif %}
+        </div>
+        {% endfor %}
+        <button class="w-full rounded-xl bg-moss py-3.5 font-semibold text-white transition hover:bg-ink">Criar minha conta</button>
+      </form>
+      <p class="text-center text-sm text-slate-500 mt-6">Já possui uma conta? <a href="{% url 'login' %}" class="font-semibold text-moss hover:underline">Entrar</a></p>
+    </div>
+  </main>
+</div>
+<style>input { width: 100%; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .75rem 1rem; background: white; outline: none; } input:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; }</style>
+{% endblock %}

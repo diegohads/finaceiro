@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Entrar | Nexsaldo{% endblock %}
+{% block content %}
+<div class="min-h-screen grid lg:grid-cols-2">
+  <section class="auth-hero hidden lg:flex p-16 text-white flex-col justify-between">
+    <div class="text-sm font-semibold tracking-[0.2em] uppercase text-mint"><span class="auth-brand-mark mr-2 inline-grid align-middle">N</span>Nexsaldo</div>
+    <div>
+      <p class="text-emerald-300 text-sm font-semibold mb-4">Clareza para suas escolhas</p>
+      <h1 class="text-6xl leading-[0.98] max-w-lg">Seu dinheiro, no ritmo da sua vida.</h1>
+      <p class="text-white/65 mt-6 max-w-md text-lg">Acompanhe receitas, despesas e vencimentos em um só lugar.</p>
+    </div>
+    <p class="text-white/40 text-sm">Privado por padrao. Cada conta ve apenas os proprios lancamentos.</p>
+  </section>
+  <main class="flex items-center justify-center p-5 sm:p-12">
+    <div class="auth-card w-full max-w-md p-6 sm:p-10">
+      <div class="auth-brand lg:hidden mb-10"><span class="auth-brand-mark">N</span>Nexsaldo</div>
+      <p class="text-moss font-semibold text-sm mb-3">Bem-vindo de volta</p>
+      <h1 class="text-4xl mb-3">Entrar na sua conta</h1>
+      <p class="text-slate-500 mb-8">Use seu usuario e senha para continuar.</p>
+      {% if form.errors %}<div class="mb-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">Usuario ou senha invalidos. Tente novamente.</div>{% endif %}
+      <form method="post" class="space-y-5">
+        {% csrf_token %}
+        <div>
+          <label for="id_username" class="block text-sm font-semibold mb-2">Usuario</label>
+          <input id="id_username" name="username" type="text" autocomplete="username" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-moss focus:ring-2 focus:ring-mint">
+        </div>
+        <div>
+          <label for="id_password" class="block text-sm font-semibold mb-2">Senha</label>
+          <div class="relative">
+            <input id="id_password" name="password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-12 outline-none focus:border-moss focus:ring-2 focus:ring-mint">
+            <button type="button" data-password-toggle="id_password" aria-label="Mostrar senha" class="absolute right-3 top-1/2 -translate-y-1/2 px-1 text-lg text-slate-400 hover:text-moss">&#128065;</button>
+          </div>
+        </div>
+        <button class="w-full rounded-xl bg-moss py-3.5 font-semibold text-white transition hover:bg-ink">Acessar painel</button>
+      </form>
+      <p class="text-center text-sm text-slate-500 mt-6">
+        <a href="{% url 'password_reset' %}" class="font-semibold text-moss hover:underline">Esqueci minha senha</a>
+      </p>
+      <p class="text-center text-sm text-slate-500 mt-2">Ainda nao tem uma conta?
+        <a href="{% url 'cadastro' %}" class="font-semibold text-moss hover:underline">Cadastre-se</a>
+      </p>
+    </div>
+  </main>
+</div>
+{% endblock %}

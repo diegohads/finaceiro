@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Nexsaldo{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { ink: '#102a43', mint: '#d1fae5', moss: '#0f766e', coral: '#e76f51', paper: '#f4f7fb' },
+          fontFamily: { sans: ['DM Sans', 'ui-sans-serif', 'system-ui'] }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --color-ink: #102a43;
+      --color-moss: #0f766e;
+      --color-mint: #d1fae5;
+      --color-paper: #f4f7fb;
+      --color-border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      min-width: 320px;
+      background:
+        radial-gradient(ellipse at 90% 0%, rgba(20, 184, 166, .08), transparent 34rem),
+        var(--color-paper);
+      color: var(--color-ink);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; letter-spacing: -.025em; }
+    h1 { text-wrap: balance; }
+    a, button { -webkit-tap-highlight-color: transparent; }
+    a { transition: color .18s ease, background-color .18s ease, border-color .18s ease, transform .18s ease; }
+    button {
+      min-height: 2.75rem;
+      cursor: pointer;
+      transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    button:active, a:active { transform: translateY(1px); }
+    :focus-visible { outline: 3px solid rgba(15, 118, 110, .35); outline-offset: 3px; }
+    p, label, small { text-wrap: pretty; }
+    hr { border-color: rgba(203, 213, 225, .7); }
+
+    .bg-white.border {
+      border-color: rgba(203, 213, 225, .78);
+      box-shadow: 0 10px 30px rgba(16, 42, 67, .045);
+    }
+    .auth-card {
+      border: 1px solid rgba(203, 213, 225, .8);
+      border-radius: 1.5rem;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 24px 64px rgba(16, 42, 67, .1);
+    }
+    .auth-hero {
+      background:
+        radial-gradient(ellipse at 10% 88%, rgba(45, 212, 191, .18), transparent 25rem),
+        linear-gradient(145deg, #102a43, #123d4a 65%, #0f766e);
+    }
+    .auth-hero h1 { max-width: 12ch; }
+    .auth-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      color: #0f766e;
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .auth-brand-mark {
+      display: grid;
+      width: 2.35rem;
+      height: 2.35rem;
+      place-items: center;
+      border-radius: .8rem;
+      background: #d1fae5;
+      color: #0f766e;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+    .auth-card input { min-height: 3.1rem; }
+
+    main:not(.dashboard-main) { padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+    main:not(.dashboard-main) > div > form,
+    main:not(.dashboard-main) > section,
+    main:not(.dashboard-main) article,
+    main:not(.dashboard-main) > div > section {
+      border-color: rgba(203, 213, 225, .8);
+      box-shadow: 0 12px 34px rgba(16, 42, 67, .045);
+    }
+    main:not(.dashboard-main) > header { margin-bottom: 2.5rem; }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+    select,
+    textarea {
+      width: 100%;
+      max-width: 100%;
+      min-height: 2.9rem;
+      border: 1px solid var(--color-border);
+      border-radius: .85rem;
+      background-color: #fff;
+      padding: .75rem .95rem;
+      color: var(--color-ink);
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--color-moss);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, .12);
+    }
+    input[type="checkbox"], input[type="radio"] { accent-color: var(--color-moss); }
+    button:not([type="button"]) { touch-action: manipulation; }
+    ::selection { background: #99f6e4; color: #102a43; }
+
+    .dashboard-sidebar {
+      background: linear-gradient(160deg, #102a43 0%, #123d4a 100%);
+    }
+    .dashboard-main > header {
+      border-bottom: 1px solid rgba(203, 213, 225, .72);
+      padding-bottom: 1.75rem;
+    }
+    .dashboard-main > section > div > .rounded-2xl,
+    .dashboard-main > section > .rounded-2xl {
+      border-color: rgba(203, 213, 225, .78);
+      box-shadow: 0 10px 30px rgba(16, 42, 67, .045);
+    }
+    .dashboard-main .bg-white.border {
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .dashboard-main a.bg-white.border:hover {
+      box-shadow: 0 14px 34px rgba(16, 42, 67, .09);
+      transform: translateY(-2px);
+    }
+    .dashboard-sidebar .dashboard-brand {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      margin-bottom: 2.75rem;
+      color: #ecfdf5;
+      letter-spacing: .16em;
+    }
+    .dashboard-brand-mark {
+      display: grid;
+      width: 2.35rem;
+      height: 2.35rem;
+      place-items: center;
+      border: 1px solid rgba(209, 250, 229, .35);
+      border-radius: .8rem;
+      background: rgba(209, 250, 229, .12);
+      color: #a7f3d0;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+    .dashboard-sidebar .dashboard-account {
+      border: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(255, 255, 255, .07);
+    }
+    .dashboard-nav a, .dashboard-nav button {
+      display: inline-flex;
+      align-items: center;
+      width: 100%;
+      min-height: 2.7rem;
+      border-radius: .75rem;
+      padding: .55rem .8rem;
+      text-align: left;
+    }
+    @media (min-width: 641px) {
+      .dashboard-sidebar .dashboard-nav { display: grid; gap: .35rem; }
+      .dashboard-nav a, .dashboard-nav button { color: rgba(255, 255, 255, .68); }
+      .dashboard-nav a:first-child {
+        background: rgba(209, 250, 229, .13);
+        color: #d1fae5;
+      }
+      .dashboard-nav form { margin-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 1rem; }
+    }
+    .dashboard-nav a:hover, .dashboard-nav button:hover { background: rgba(255, 255, 255, .1); }
+    .dashboard-main { scrollbar-gutter: stable; }
+    form.flex > input[type="text"] { flex: 1 1 8rem; min-width: 0; }
+
+    @media (max-width: 640px) {
+      body { background: var(--color-paper); }
+      h1 { font-size: clamp(1.9rem, 8vw, 2.6rem); line-height: 1.08; }
+      main:not(.dashboard-main) { padding-left: 1rem; padding-right: 1rem; }
+      main:not(.dashboard-main) .rounded-2xl,
+      main:not(.dashboard-main) .rounded-3xl { border-radius: 1.15rem; }
+      input, select, textarea, button { font-size: 16px; }
+      button { min-height: 2.9rem; }
+      .auth-card { border-radius: 1.25rem; padding: 1.5rem; }
+      .auth-hero h1 { max-width: 14ch; }
+      .dashboard-sidebar {
+        position: relative;
+        z-index: 2;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+      }
+      .dashboard-sidebar > div:first-child { display: grid; grid-template-columns: 1fr auto; gap: .8rem; align-items: center; }
+      .dashboard-sidebar .dashboard-brand { margin: 0; }
+      .dashboard-sidebar > div:first-child > div:nth-child(2) { grid-column: 1 / -1; padding: .75rem 1rem; }
+      .dashboard-sidebar > div:first-child > a { grid-column: 1 / -1; margin: 0; justify-content: center; }
+      .dashboard-sidebar .dashboard-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .35rem;
+        margin: 0;
+        padding: 0;
+      }
+      .dashboard-nav a, .dashboard-nav button {
+        width: 100%;
+        min-height: 2.7rem;
+        justify-content: center;
+        padding: .4rem .3rem;
+        text-align: center;
+        white-space: normal;
+        font-size: .75rem;
+      }
+      .dashboard-nav form { width: 100%; margin: 0; }
+      .dashboard-main { overflow: visible; padding: 1.25rem 1rem 2rem; }
+      .dashboard-main > header { padding-bottom: 1.25rem; }
+      main:not(.dashboard-main) .flex.gap-3:not(.items-center) { flex-wrap: wrap; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+  <script>
+    const formatCurrency = (input) => {
+      const digits = input.value.replace(/\D/g, "");
+      if (!digits) {
+        input.value = "";
+        return;
+      }
+      const amount = (Number(digits) / 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      input.value = `R$ ${amount}`;
+    };
+
+    const prepareCurrency = (input) => {
+      const digits = input.value.replace(/\D/g, "");
+      if (!digits) {
+        input.value = "";
+        return;
+      }
+      const padded = digits.padStart(3, "0");
+      input.value = `${padded.slice(0, -2)}.${padded.slice(-2)}`;
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("[data-currency]").forEach((input) => {
+        formatCurrency(input);
+        input.addEventListener("input", () => formatCurrency(input));
+        if (input.form) input.form.addEventListener("submit", () => prepareCurrency(input));
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      const toggle = event.target.closest('[data-password-toggle]');
+      if (!toggle) return;
+
+      const input = document.getElementById(toggle.dataset.passwordToggle);
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      toggle.innerHTML = '&#128065;';
+      toggle.setAttribute('aria-label', showing ? 'Mostrar senha' : 'Ocultar senha');
+    });
+  </script>
+  {% if user.is_authenticated %}
+  <script>
+    (() => {
+      const inactivityLimit = 5 * 60 * 1000;
+      let inactivityTimer;
+
+      const logoutForInactivity = () => {
+        document.getElementById('inactivity-logout').submit();
+      };
+
+      const resetInactivityTimer = () => {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(logoutForInactivity, inactivityLimit);
+      };
+
+      ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach((eventName) => {
+        document.addEventListener(eventName, resetInactivityTimer, { passive: true });
+      });
+
+      resetInactivityTimer();
+    })();
+  </script>
+  {% endif %}
+</head>
+<body class="min-h-screen bg-paper text-ink">
+  {% if user.is_authenticated %}
+  <form id="inactivity-logout" method="post" action="{% url 'logout' %}" hidden>
+    {% csrf_token %}
+  </form>
+  {% endif %}
+  {% block content %}{% endblock %}
+</body>
+</html>

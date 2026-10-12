@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% load finance_format %}
+{% block title %}Planejamento | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen p-5 sm:p-8 lg:p-12 max-w-6xl mx-auto">
+  <a href="{% url 'dashboard' %}" class="text-sm text-moss hover:underline">← Voltar ao dashboard</a>
+  <div class="mt-8 mb-8">
+    <p class="text-sm text-moss font-semibold mb-2">Objetivos financeiros</p>
+    <h1 class="text-4xl sm:text-5xl">Monte seu planejamento</h1>
+    <p class="text-slate-500 mt-2">Acompanhe o dinheiro guardado para cada compra e veja quanto falta para chegar na meta.</p>
+  </div>
+
+  {% if messages %}{% for message in messages %}<div class="mb-6 rounded-xl bg-mint px-4 py-3 text-sm font-medium text-moss">{{ message }}</div>{% endfor %}{% endif %}
+
+  <section class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 mb-8">
+    <h2 class="text-xl font-bold">{% if planejamento_editando %}Editar planejamento{% else %}Nova meta{% endif %}</h2>
+    <p class="text-sm text-slate-500 mt-1 mb-6">Informe o que voce quer comprar e onde esta guardando o dinheiro.</p>
+    <form method="post" class="grid sm:grid-cols-2 gap-5">
+      {% csrf_token %}
+      {% if planejamento_editando %}<input type="hidden" name="planejamento_id" value="{{ planejamento_editando.pk }}">{% endif %}
+      {% for field in form %}
+      <div{% if field.name == 'valor_guardado' %} class="sm:col-start-2"{% endif %}>
+        <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-2">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<p class="text-sm text-coral mt-1">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="sm:col-span-2 flex flex-wrap gap-3 pt-2">
+        <button class="rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">{% if planejamento_editando %}Salvar alteracoes{% else %}Criar planejamento{% endif %}</button>
+        {% if planejamento_editando %}<a href="{% url 'planejamentos' %}" class="rounded-xl border border-slate-200 px-5 py-3 font-semibold hover:bg-slate-50">Cancelar</a>{% endif %}
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <div class="flex items-center justify-between mb-4"><h2 class="text-xl font-bold">Minhas metas</h2><span class="text-sm text-slate-400">{{ planejamentos|length }} cadastrada{{ planejamentos|length|pluralize:'s' }}</span></div>
+    <div class="grid md:grid-cols-2 gap-5">
+      {% for planejamento in planejamentos %}
+      <article class="rounded-2xl bg-white border border-slate-200 p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div><h3 class="text-xl font-bold">{{ planejamento.objeto }}</h3><p class="text-sm text-slate-500 mt-1">Dinheiro guardado em: {{ planejamento.conta }}</p></div>
+          <span class="rounded-full bg-mint px-3 py-1 text-xs font-bold text-moss">{{ planejamento.percentual|floatformat:0 }}%</span>
+        </div>
+        <div class="mt-6 h-3 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-moss" style="width: {{ planejamento.percentual }}%"></div></div>
+        <div class="grid grid-cols-3 gap-3 mt-5 text-sm">
+          <div><p class="text-slate-400">Guardado</p><p class="font-bold mt-1">R$ {{ planejamento.valor_guardado|localize }}</p></div>
+          <div><p class="text-slate-400">Meta</p><p class="font-bold mt-1">R$ {{ planejamento.valor_meta|localize }}</p></div>
+          <div><p class="text-slate-400">Falta</p><p class="font-bold mt-1 text-coral">R$ {{ planejamento.valor_restante|localize }}</p></div>
+        </div>
+        {% if planejamento.valor_restante > 0 %}
+        <form method="post" action="{% url 'planejamento_adicionar_guardado' planejamento.pk %}" class="mt-6 border-t border-slate-100 pt-5">
+          {% csrf_token %}
+          <label for="valor-{{ planejamento.pk }}" class="block text-sm font-semibold text-slate-700 mb-2">Guardar mais dinheiro</label>
+          <div class="flex gap-2"><input id="valor-{{ planejamento.pk }}" name="valor" type="text" inputmode="decimal" autocomplete="off" data-currency="true" placeholder="R$ 0,00" required><button class="shrink-0 rounded-xl bg-moss px-4 py-2 text-sm font-semibold text-white hover:bg-ink">Adicionar</button></div>
+        </form>
+        {% else %}<p class="mt-6 rounded-xl bg-mint px-4 py-3 text-sm font-semibold text-moss">Meta alcançada.</p>{% endif %}
+        <div class="flex gap-4 mt-6 text-sm"><a href="{% url 'planejamentos' %}?editar={{ planejamento.pk }}" class="font-semibold text-moss hover:underline">Editar</a><form method="post" action="{% url 'planejamento_excluir' planejamento.pk %}" onsubmit="return confirm('Apagar este planejamento?');">{% csrf_token %}<button class="font-semibold text-coral hover:underline">Apagar</button></form></div>
+      </article>
+      {% empty %}
+      <div class="md:col-span-2 rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-500">Voce ainda nao criou uma meta de compra.</div>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+<style>
+  input[type="text"], input[type="number"] { width: 100%; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .75rem .9rem; outline: none; }
+  input[type="text"]:focus, input[type="number"]:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; }
+</style>
+{% endblock %}

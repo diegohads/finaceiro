@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | Nexsaldo{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}"><span class="nexsaldo-mark">N</span>Nexsaldo <span class="admin-label">Administração</span></a></h1>
+{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #0f766e;
+      --secondary: #102a43;
+      --accent: #0f766e;
+      --primary-fg: #fff;
+      --body-bg: #f4f7fb;
+      --body-fg: #102a43;
+      --body-quiet-color: #64748b;
+      --body-loud-color: #102a43;
+      --header-bg: #102a43;
+      --header-color: #f0fdfa;
+      --breadcrumbs-bg: #e7f6f2;
+      --breadcrumbs-fg: #31574f;
+      --breadcrumbs-link-fg: #0f766e;
+      --link-fg: #0f766e;
+      --link-hover-color: #115e59;
+      --hairline-color: #dce6ee;
+      --darkened-bg: #edf3f6;
+      --selected-bg: #d1fae5;
+      --selected-row: #e7f6f2;
+    }
+
+    body { color-scheme: light; }
+    #header {
+      background: linear-gradient(110deg, #102a43, #123d4a 70%, #0f766e);
+      padding: 1rem 2rem;
+    }
+    #branding h1 { display: flex; align-items: center; gap: .7rem; font-weight: 700; letter-spacing: .02em; }
+    #branding h1 a { display: inline-flex; align-items: center; gap: .65rem; color: #f0fdfa; }
+    #branding h1 a:hover { color: #a7f3d0; }
+    .nexsaldo-mark {
+      display: inline-grid;
+      width: 2.25rem;
+      height: 2.25rem;
+      place-items: center;
+      border: 1px solid rgba(209, 250, 229, .35);
+      border-radius: .75rem;
+      background: rgba(209, 250, 229, .12);
+      color: #a7f3d0;
+      font-size: 1rem;
+    }
+    .admin-label {
+      margin-left: .15rem;
+      color: rgba(240, 253, 250, .62);
+      font-size: .72rem;
+      font-weight: 500;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    #user-tools { line-height: 2.25rem; color: rgba(240, 253, 250, .72); }
+    #user-tools a { color: #d1fae5; }
+    #user-tools a:hover { color: #fff; }
+    div.breadcrumbs { padding: .85rem 2rem; }
+    #content { max-width: 1600px; margin: 0 auto; padding: 2rem; }
+    #content h1 { color: #102a43; font-size: 1.8rem; font-weight: 700; }
+    .module, #changelist, .submit-row {
+      overflow: hidden;
+      border: 1px solid #dce6ee;
+      border-radius: 1rem;
+      box-shadow: 0 10px 28px rgba(16, 42, 67, .045);
+    }
+    .module h2, .module caption, .inline-group h2 {
+      background: #e7f6f2;
+      color: #102a43;
+      font-weight: 700;
+    }
+    #content-main .module table th, #content-main .module table td { padding: .8rem 1rem; }
+    #content-main .module table tr:hover td { background: #f6fbfa; }
+    input, select, textarea, .vTextField {
+      border: 1px solid #dce6ee;
+      border-radius: .65rem;
+      padding: .55rem .75rem;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #0f766e;
+      outline: 3px solid rgba(15, 118, 110, .13);
+    }
+    .button, input[type=submit], input[type=button], .submit-row input, a.button {
+      min-height: 2.6rem;
+      border: 0;
+      border-radius: .7rem;
+      background: #0f766e;
+      padding: .65rem 1rem;
+      color: #fff;
+      font-weight: 600;
+    }
+    .button:hover, input[type=submit]:hover, input[type=button]:hover, .submit-row input:hover, a.button:hover {
+      background: #102a43;
+    }
+    .submit-row { padding: 1rem; }
+    .object-tools a:link, .object-tools a:visited { border-radius: .65rem; }
+    :focus-visible { outline: 3px solid rgba(15, 118, 110, .35); outline-offset: 2px; }
+
+    @media (max-width: 767px) {
+      #header { gap: .5rem; padding: .85rem 1rem; }
+      #branding h1 { font-size: 1.05rem; }
+      .admin-label { font-size: .6rem; }
+      #user-tools { width: 100%; margin: 0; padding: .25rem 0 0; text-align: left; }
+      div.breadcrumbs { padding: .75rem 1rem; }
+      #content { padding: 1.25rem 1rem; }
+      #content-main, #content-related { float: none; width: 100%; }
+      #changelist table { min-width: 620px; }
+      #changelist-form { overflow-x: auto; }
+      .submit-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+    }
+  </style>
+{% endblock %}

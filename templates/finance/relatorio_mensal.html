@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load finance_format %}
+{% block title %}Relatorio mensal | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen p-5 sm:p-8 lg:p-12 max-w-7xl mx-auto">
+  <header class="flex flex-col lg:flex-row lg:items-end justify-between gap-7 mb-10">
+    <div>
+      <a href="{% url 'dashboard' %}" class="text-sm font-semibold text-moss hover:underline">← Voltar ao dashboard</a>
+      <p class="text-xs text-moss font-bold uppercase tracking-[0.18em] mt-8 mb-3">Relatorio gerencial</p>
+      {% if configuracao_documento.nome_empresa %}<p class="text-sm font-semibold text-slate-500">{{ configuracao_documento.nome_empresa }}</p>{% endif %}
+      <h1 class="text-4xl sm:text-5xl tracking-tight">{{ configuracao_documento.titulo_relatorio|default:'Relatorio mensal' }}</h1>
+      <p class="text-slate-500 mt-3">Resumo de receitas, despesas e movimentacoes de {{ mes_atual }}.</p>
+    </div>
+    <form method="get" class="grid sm:grid-cols-[1fr_6rem_auto] gap-3 rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <label class="sr-only" for="mes">Mes</label><select id="mes" name="mes" class="rounded-xl border border-slate-200 px-3 py-2 bg-white">{% for numero, nome in meses %}<option value="{{ numero }}" {% if numero == mes_selecionado %}selected{% endif %}>{{ nome|capfirst }}</option>{% endfor %}</select>
+      <label class="sr-only" for="ano">Ano</label><input id="ano" name="ano" type="number" value="{{ ano_selecionado }}" min="2000" max="2100" class="w-24 rounded-xl border border-slate-200 px-3 py-2">
+      <button class="rounded-xl bg-moss px-4 py-2 font-semibold text-white hover:bg-ink">Atualizar</button>
+      <details class="sm:col-span-3 rounded-xl border border-slate-200 px-3 py-2 text-sm"><summary class="cursor-pointer font-semibold text-slate-700">Personalizar PDF</summary><div class="flex flex-wrap gap-x-5 gap-y-2 pt-3"><label><input type="checkbox" name="pdf_secao" value="resumo" checked> Resumo</label><label><input type="checkbox" name="pdf_secao" value="lancamentos" checked> Lancamentos</label><label><input type="checkbox" name="pdf_secao" value="categorias" checked> Categorias</label></div></details>
+      <button formaction="{% url 'relatorio_pdf' %}" formmethod="get" class="sm:col-span-3 rounded-xl border border-moss px-4 py-2 text-center font-semibold text-moss hover:bg-mint">Baixar relatorio em PDF</button>
+    </form>
+  </header>
+  <div class="flex items-center justify-between mb-4"><div><h2 class="text-2xl font-bold">Visao geral</h2><p class="text-sm text-slate-500 mt-1">{{ mes_atual|capfirst }} · valores confirmados</p></div><span class="hidden sm:block rounded-full bg-mint px-3 py-1 text-xs font-bold text-moss">FECHAMENTO MENSAL</span></div>
+  <section class="grid md:grid-cols-3 gap-4 mb-10">
+    <div class="rounded-2xl bg-moss p-6 text-white shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-white/65">Receitas recebidas</p><p class="text-3xl font-bold mt-4">R$ {{ receitas|moeda }}</p><p class="text-xs text-white/60 mt-2">Entradas confirmadas</p></div>
+    <div class="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-slate-400">Despesas pagas</p><p class="text-3xl font-bold mt-4 text-coral">R$ {{ despesas|moeda }}</p><p class="text-xs text-slate-400 mt-2">Saidas confirmadas</p></div>
+    <div class="rounded-2xl bg-white border border-slate-200 p-6 shadow-sm"><p class="text-xs font-bold uppercase tracking-wider text-slate-400">Saldo do periodo</p><p class="text-3xl font-bold mt-4 {% if saldo < 0 %}text-coral{% else %}text-moss{% endif %}">R$ {{ saldo|moeda }}</p><p class="text-xs text-slate-400 mt-2">Receitas menos despesas</p></div>
+  </section>
+  <section class="grid xl:grid-cols-[1.35fr_.65fr] gap-8">
+    <div><div class="flex items-end justify-between mb-4"><div><h2 class="text-xl font-bold">Lancamentos do periodo</h2><p class="text-sm text-slate-500 mt-1">Movimentacoes confirmadas em {{ mes_atual }}.</p></div><span class="text-xs font-bold text-slate-400">{{ transacoes|length }} registro(s)</span></div><div class="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm"><div class="hidden sm:grid grid-cols-[1fr_7rem_6rem] gap-4 px-5 py-3 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400"><span>Descricao</span><span>Data</span><span class="text-right">Valor</span></div>{% for transacao in transacoes %}<div class="grid sm:grid-cols-[1fr_7rem_6rem] gap-2 sm:gap-4 p-5 border-t first:border-0 border-slate-100"><div><p class="font-semibold">{{ transacao.descricao }}</p><p class="text-xs text-slate-400 mt-1">{{ transacao.get_tipo_display }}{% if transacao.categoria %} · {{ transacao.categoria.nome }}{% endif %} · {{ transacao.get_status_display }}</p></div><span class="text-xs text-slate-500">{{ transacao.data_vencimento|date:'d/m/Y' }}</span><p class="font-bold text-right {% if transacao.tipo == 'despesa' %}text-coral{% else %}text-moss{% endif %}">R$ {{ transacao.valor_pago|moeda }}</p></div>{% empty %}<p class="p-8 text-center text-slate-500">Nenhum lancamento neste mes.</p>{% endfor %}</div></div>
+    <div><h2 class="text-xl font-bold mb-4">Despesas por categoria</h2><div class="rounded-2xl bg-ink p-6 text-white shadow-sm">{% for item in categorias %}<div class="py-4 border-b border-white/10 last:border-0"><div class="flex justify-between gap-3"><span class="font-semibold">{{ item.categoria__nome }}</span><strong>R$ {{ item.total|moeda }}</strong></div><div class="h-1.5 rounded-full bg-white/10 mt-3"><div class="h-full rounded-full bg-mint" style="width: {% widthratio item.total despesas 100 %}%"></div></div></div>{% empty %}<p class="text-white/60 py-4">Nenhuma despesa categorizada neste mes.</p>{% endfor %}</div></div>
+  </section>
+</main>
+<style>select, input[type="number"] { outline: none; } select:focus, input[type="number"]:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; } details summary::-webkit-details-marker { color: #0f766e; }</style>
+{% endblock %}
