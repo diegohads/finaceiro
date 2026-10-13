@@ -4,8 +4,16 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-troque-esta-chave-em-producao"
-DEBUG = True
-ALLOWED_HOSTS = []
+DEBUG = os.getenv("DEBUG", "True").lower() in {"1", "true", "yes", "on"}
+hosts_configurados = os.getenv(
+    "ALLOWED_HOSTS",
+    "*" if DEBUG else "localhost,127.0.0.1,[::1]",
+)
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in hosts_configurados.split(",")
+    if host.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

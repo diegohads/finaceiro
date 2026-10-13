@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load l10n %}
+{% block title %}Confirmar movimentacao | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen max-w-2xl mx-auto p-5 sm:p-8 lg:p-12">
+  <a href="{% url 'dashboard' %}" class="text-sm text-moss hover:underline">← Voltar ao dashboard</a>
+  <section class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+    <p class="text-sm font-semibold {% if transacao.tipo == 'receita' %}text-moss{% else %}text-coral{% endif %} mb-2">{% if transacao.tipo == 'receita' %}CONFIRMAR RECEITA{% else %}BAIXAR DESPESA{% endif %}</p>
+    <h1 class="text-3xl font-bold text-ink">{{ transacao.descricao }}</h1>
+    <p class="mt-2 text-slate-500">Valor desta baixa: <strong class="text-ink">R$ {{ transacao.valor_parcela|localize }}</strong>{% if transacao.parcelado %} · Parcela {{ transacao.parcelas_pagas|add:1 }} de {{ transacao.numero_parcelas }}{% endif %}</p>
+    {% if not contas_disponiveis %}
+      <div class="mt-6 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Cadastre uma conta financeira antes de confirmar esta movimentacao.</div>
+      <a href="{% url 'cadastros_financeiros' %}" class="mt-5 inline-flex rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">Cadastrar conta financeira</a>
+    {% else %}
+      <form method="post" class="mt-7 space-y-5">{% csrf_token %}
+        <div>
+          <label for="{{ form.conta_origem.id_for_label }}" class="mb-2 block text-sm font-semibold text-ink">{{ form.conta_origem.label }}</label>
+          {{ form.conta_origem }}
+          {% for error in form.conta_origem.errors %}<p class="mt-2 text-sm text-coral">{{ error }}</p>{% endfor %}
+        </div>
+        {% if form.non_field_errors %}<div class="text-sm text-coral">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="flex flex-wrap gap-3"><button type="submit" class="rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">{% if transacao.tipo == 'receita' %}Confirmar entrada{% else %}Confirmar baixa{% endif %}</button><a href="{% url 'dashboard' %}" class="rounded-xl border border-slate-200 px-5 py-3 font-semibold text-ink hover:bg-slate-50">Cancelar</a></div>
+      </form>
+    {% endif %}
+  </section>
+</main>
+<style>select { width: 100%; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .75rem .85rem; outline: none; background: white; } select:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; }</style>
+{% endblock %}

@@ -1,12 +1,18 @@
 from calendar import monthrange
 from datetime import date
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 
 
 class CategoriaDespesa(models.Model):
+    class Tipo(models.TextChoices):
+        DESPESA = "despesa", "Despesa"
+        RECEITA = "receita", "Receita"
+
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -15,6 +21,7 @@ class CategoriaDespesa(models.Model):
         related_name="categorias_despesa",
     )
     nome = models.CharField(max_length=80)
+    tipo = models.CharField(max_length=10, choices=Tipo.choices, default=Tipo.DESPESA)
     ativa = models.BooleanField(default=True)
     criada_em = models.DateTimeField(auto_now_add=True)
 
@@ -26,6 +33,90 @@ class CategoriaDespesa(models.Model):
 
     def __str__(self):
         return self.nome
+
+class ContaFinanceira(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="contas_financeiras",
+    )
+    nome = models.CharField(max_length=80)
+    criada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+        constraints = [
+            models.UniqueConstraint(fields=("usuario", "nome"), name="conta_usuario_nome_unico"),
+        ]
+        verbose_name = "Conta financeira"
+        verbose_name_plural = "Contas financeiras"
+
+    def __str__(self):
+        return self.nome
+
+    @property
+    def saldo(self):
+        valor_pago = ExpressionWrapper(
+            F("valor") * F("parcelas_pagas") / F("numero_parcelas"),
+            output_field=DecimalField(max_digits=12, decimal_places=2),
+        )
+        receitas = self.transacoes.filter(tipo=Transacao.Tipo.RECEITA).aggregate(
+            total=Sum(valor_pago)
+        )["total"] or Decimal("0.00")
+        despesas = self.transacoes.filter(tipo=Transacao.Tipo.DESPESA).aggregate(
+            total=Sum(valor_pago)
+        )["total"] or Decimal("0.00")
+        transferencias_recebidas = self.transferencias_recebidas.aggregate(
+            total=Sum("valor")
+        )["total"] or Decimal("0.00")
+        transferencias_enviadas = self.transferencias_enviadas.aggregate(
+            total=Sum("valor")
+        )["total"] or Decimal("0.00")
+        return receitas + transferencias_recebidas - despesas - transferencias_enviadas
+
+
+class TransferenciaFinanceira(models.Model):
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="transferencias_financeiras",
+    )
+    conta_origem = models.ForeignKey(
+        ContaFinanceira,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="transferencias_enviadas",
+    )
+    conta_destino = models.ForeignKey(
+        ContaFinanceira,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="transferencias_recebidas",
+    )
+    valor = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)],
+    )
+    realizada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-realizada_em"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    Q(conta_origem__isnull=True)
+                    | Q(conta_destino__isnull=True)
+                    | ~Q(conta_origem=F("conta_destino"))
+                ),
+                name="transferencia_contas_diferentes",
+            ),
+        ]
+        verbose_name = "Transferencia financeira"
+        verbose_name_plural = "Transferencias financeiras"
+
+    def __str__(self):
+        return f"{self.conta_origem} para {self.conta_destino}: {self.valor}"
 
 
 class FormaPagamentoPersonalizada(models.Model):
@@ -72,6 +163,28 @@ class Planejamento(models.Model):
         return min((self.valor_guardado / self.valor_meta) * 100, 100)
 
 
+class SubUsuario(models.Model):
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="perfil_subusuario",
+    )
+    conta_principal = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="subusuarios",
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["usuario__username"]
+        verbose_name = "Subusuario"
+        verbose_name_plural = "Subusuarios"
+
+    def __str__(self):
+        return self.usuario.get_full_name() or self.usuario.get_username()
+
+
 class Transacao(models.Model):
     class Tipo(models.TextChoices):
         RECEITA = "receita", "Receita"
@@ -93,10 +206,24 @@ class Transacao(models.Model):
         on_delete=models.CASCADE,
         related_name="transacoes",
     )
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transacoes_criadas",
+    )
     tipo = models.CharField(max_length=10, choices=Tipo.choices)
     descricao = models.CharField(max_length=160)
     categoria = models.ForeignKey(
         CategoriaDespesa,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transacoes",
+    )
+    conta_origem = models.ForeignKey(
+        ContaFinanceira,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -143,9 +270,14 @@ class Transacao(models.Model):
     def parcelas_restantes(self):
         return max(self.numero_parcelas - self.parcelas_pagas, 0)
 
-    def registrar_pagamento(self):
+    def registrar_pagamento(self, conta_origem=None):
         if self.status == self.Status.CONCLUIDO:
             return
+        if conta_origem is None:
+            raise ValueError("A conta financeira e obrigatoria para registrar o pagamento.")
+        if self.parcelas_pagas and self.conta_origem_id and self.conta_origem_id != conta_origem.pk:
+            raise ValueError("Todas as parcelas deste lancamento devem usar a mesma conta financeira.")
+        self.conta_origem = conta_origem
         self.parcelas_pagas = min(self.parcelas_pagas + 1, self.numero_parcelas)
         if self.parcelas_pagas >= self.numero_parcelas:
             self.status = self.Status.CONCLUIDO
@@ -155,7 +287,9 @@ class Transacao(models.Model):
             proximo_ano = hoje.year + (1 if hoje.month == 12 else 0)
             dia = min(hoje.day, monthrange(proximo_ano, proximo_mes)[1])
             self.data_vencimento = date(proximo_ano, proximo_mes, dia)
-        self.save(update_fields=("parcelas_pagas", "status", "data_vencimento"))
+        update_fields = ["parcelas_pagas", "status", "data_vencimento"]
+        update_fields.append("conta_origem")
+        self.save(update_fields=update_fields)
 
 
 class PermissaoRecibo(models.Model):
@@ -183,7 +317,9 @@ class ConfiguracaoDocumento(models.Model):
     nome_empresa = models.CharField(max_length=120, blank=True)
     titulo_relatorio = models.CharField(max_length=120, default="Relatorio financeiro")
     titulo_recibo = models.CharField(max_length=120, default="Recibo de pagamento")
-    logo = models.FileField(upload_to="documentos/logos/", blank=True, null=True)
+    logo_menu = models.FileField(upload_to="documentos/logos/", blank=True, null=True)
+    logo_relatorio = models.FileField(upload_to="documentos/logos/", blank=True, null=True)
+    logo_recibo = models.FileField(upload_to="documentos/logos/", blank=True, null=True)
     cor_principal = models.CharField(max_length=7, default="#1f6b4f")
     rodape = models.CharField(max_length=240, blank=True)
     mostrar_forma_pagamento = models.BooleanField(default=True)
@@ -203,7 +339,8 @@ class Cliente(models.Model):
         on_delete=models.CASCADE,
         related_name="clientes",
     )
-    cnpj = models.CharField(max_length=18)
+    cnpj = models.CharField(max_length=18, blank=True, default="")
+    cpf = models.CharField(max_length=11, blank=True, default="")
     razao_social = models.CharField(max_length=180)
     nome_fantasia = models.CharField(max_length=180, blank=True)
     logradouro = models.CharField(max_length=180, blank=True)
@@ -220,7 +357,16 @@ class Cliente(models.Model):
     class Meta:
         ordering = ["razao_social"]
         constraints = [
-            models.UniqueConstraint(fields=("usuario", "cnpj"), name="cliente_usuario_cnpj_unico"),
+            models.UniqueConstraint(
+                fields=("usuario", "cnpj"),
+                condition=~models.Q(cnpj=""),
+                name="cliente_usuario_cnpj_unico",
+            ),
+            models.UniqueConstraint(
+                fields=("usuario", "cpf"),
+                condition=~models.Q(cpf=""),
+                name="cliente_usuario_cpf_unico",
+            ),
         ]
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
@@ -264,6 +410,7 @@ class Recibo(models.Model):
         related_name="recibos",
     )
     recebedor = models.CharField(max_length=160)
+    cpf = models.CharField(max_length=11, blank=True)
     servico = models.CharField(max_length=180)
     valor = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0.01)])
     data_pagamento = models.DateField()

@@ -6,23 +6,27 @@
 <div class="min-h-screen overflow-x-hidden lg:h-screen lg:overflow-hidden lg:grid lg:grid-cols-[240px_1fr]">
   <aside class="dashboard-sidebar bg-ink text-white p-6 lg:p-8 flex lg:flex-col justify-between gap-8">
     <div>
-      <div class="dashboard-brand text-sm font-semibold uppercase"><span class="dashboard-brand-mark">N</span>Nexsaldo</div>
+      <div class="dashboard-brand text-sm font-semibold uppercase">{% if configuracao_documento.logo_menu %}<img src="{{ configuracao_documento.logo_menu.url }}" alt="{{ configuracao_documento.nome_empresa|default:'Logo do menu' }}" class="max-h-12 max-w-40 object-contain">{% else %}<span class="dashboard-brand-mark">N</span>Nexsaldo{% endif %}</div>
       <div class="dashboard-account flex items-center gap-3 rounded-2xl p-4">
         <div class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-mint font-bold text-moss">{{ request.user.username|first|upper }}</div>
         <div class="min-w-0">
-          <p class="text-xs text-white/50 uppercase tracking-wider">Conta ativa</p>
-          <p class="font-semibold mt-1 truncate">{{ request.user.get_full_name|default:request.user.username|capfirst }}</p>
+          <p class="text-xs text-white/50 uppercase tracking-wider">{% if eh_subusuario %}Conta de{% else %}Conta ativa{% endif %}</p>
+          <p class="font-semibold mt-1 truncate">{{ conta_principal.get_full_name|default:conta_principal.username|capfirst }}</p>
+          {% if eh_subusuario %}<p class="mt-1 text-xs text-white/60">Acesso de {{ request.user.get_full_name|default:request.user.username }}</p>{% endif %}
         </div>
       </div>
-      <a href="{% url 'planejamentos' %}" class="mt-4 flex items-center gap-3 rounded-xl bg-mint px-4 py-3 text-sm font-semibold text-ink hover:bg-white transition">
+      {% if not eh_subusuario %}<a href="{% url 'planejamentos' %}" class="mt-4 flex items-center gap-3 rounded-xl bg-mint px-4 py-3 text-sm font-semibold text-ink hover:bg-white transition">
         <span aria-hidden="true" class="grid h-7 w-7 place-items-center rounded-lg bg-white/70">+</span> Monte seu planejamento
-      </a>
+      </a>{% endif %}
     </div>
     <nav class="dashboard-nav flex lg:block items-center gap-2" aria-label="Navegacao principal">
       <a href="{% url 'dashboard' %}" class="text-sm text-white/80 hover:text-white">Visao geral</a>
-      <a href="{% url 'relatorio_mensal' %}" class="text-sm text-white/60 hover:text-white">Relatorios</a>
-      {% if request.user.is_staff %}<a href="/admin/" class="text-sm text-mint hover:text-white">Administracao</a><a href="{% url 'recibos' %}" class="text-sm text-white/60 hover:text-white">Recibos</a><a href="{% url 'configuracao_documentos' %}" class="text-sm text-white/60 hover:text-white">Configuracoes</a>{% elif request.user.permissao_recibo.pode_emitir %}<a href="{% url 'recibos' %}" class="text-sm text-white/60 hover:text-white">Recibos</a>{% endif %}
-      <a href="{% url 'cadastros_financeiros' %}" class="text-sm text-white/60 hover:text-white">Cadastros</a>
+      {% if not eh_subusuario %}
+        <a href="{% url 'relatorio_mensal' %}" class="text-sm text-white/60 hover:text-white">Relatorios</a>
+        {% if request.user.is_staff %}<a href="/admin/" class="text-sm text-mint hover:text-white">Administracao</a><a href="{% url 'recibos' %}" class="text-sm text-white/60 hover:text-white">Recibos</a><a href="{% url 'configuracao_documentos' %}" class="text-sm text-white/60 hover:text-white">Configuracoes</a>{% elif request.user.permissao_recibo.pode_emitir %}<a href="{% url 'recibos' %}" class="text-sm text-white/60 hover:text-white">Recibos</a>{% endif %}
+        <a href="{% url 'cadastros_financeiros' %}" class="text-sm text-white/60 hover:text-white">Cadastros</a>
+        <a href="{% url 'subusuarios' %}" class="text-sm text-white/60 hover:text-white">Subusuarios</a>
+      {% endif %}
       <form method="post" action="{% url 'logout' %}" class="mt-0 lg:mt-4">
         {% csrf_token %}
         <button type="submit" class="w-full text-sm text-white/60 hover:text-white">Sair da conta</button>
@@ -32,7 +36,7 @@
   <main class="dashboard-main min-w-0 overflow-y-auto p-5 sm:p-8 lg:p-12 max-w-7xl w-full lg:h-screen">
     <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-5 mb-9">
       <div><p class="text-sm text-moss font-semibold mb-2">SEU RESUMO FINANCEIRO</p><h1 class="text-4xl sm:text-5xl">Ola, {{ request.user.first_name|default:request.user.username|capfirst }}.</h1><p class="text-slate-500 mt-2">Acompanhe suas movimentacoes e mantenha seus planos em dia.</p></div>
-      <div class="flex flex-col sm:flex-row gap-3"><a href="{% url 'relatorio_mensal' %}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-ink hover:border-moss transition">Relatorio mensal</a><a href="{% url 'transacao_nova' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-moss px-5 py-3 font-semibold text-white shadow-lg shadow-teal-900/10 hover:bg-ink transition"><span class="text-xl leading-none">+</span> Nova transacao</a></div>
+      <div class="flex flex-col sm:flex-row gap-3">{% if not eh_subusuario %}<a href="{% url 'relatorio_mensal' %}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-ink hover:border-moss transition">Relatorio mensal</a>{% endif %}<a href="{% url 'transacao_nova' %}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-moss px-5 py-3 font-semibold text-white shadow-lg shadow-teal-900/10 hover:bg-ink transition"><span class="text-xl leading-none">+</span> Nova transacao</a></div>
     </header>
 
     {% if messages %}{% for message in messages %}<div class="mb-6 rounded-xl bg-mint px-4 py-3 text-sm font-medium text-moss">{{ message }}</div>{% endfor %}{% endif %}
@@ -41,12 +45,12 @@
     <section class="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
       <div class="flex items-start gap-3"><div class="text-2xl">!</div><div><h2 class="text-lg font-bold text-amber-950">Contas para baixa</h2><p class="text-sm text-amber-800 mt-1">Lancamentos de hoje ou atrasados aguardam confirmacao.</p></div></div>
       <div class="grid md:grid-cols-2 gap-3 mt-5">
-        {% for transacao in alertas %}<div class="flex justify-between items-center gap-3 rounded-xl bg-white/75 p-4 border border-amber-100"><div><p class="font-semibold">{{ transacao.descricao }}</p><p class="text-xs mt-1 {% if transacao.tipo == 'despesa' %}text-coral{% else %}text-moss{% endif %}">{{ transacao.get_tipo_display }} · {% if transacao.data_vencimento < today %}atrasada{% elif transacao.data_vencimento == today %}vence hoje{% else %}conta em dia{% endif %}</p></div><div class="text-right"><strong class="block">R$ {{ transacao.valor_parcela|localize }}</strong><form method="post" action="{% url 'transacao_concluir' transacao.pk %}" class="mt-2">{% csrf_token %}<button class="text-xs font-semibold text-moss hover:underline">{% if transacao.tipo == 'receita' %}Confirmar recebimento{% else %}Concluir {% if transacao.parcelado %}parcela{% else %}despesa{% endif %}{% endif %}</button></form></div></div>{% endfor %}
+        {% for transacao in alertas %}<div class="flex justify-between items-center gap-3 rounded-xl bg-white/75 p-4 border border-amber-100"><div><p class="font-semibold">{{ transacao.descricao }}</p><p class="text-xs mt-1 {% if transacao.tipo == 'despesa' %}text-coral{% else %}text-moss{% endif %}">{{ transacao.get_tipo_display }} · {% if transacao.data_vencimento < today %}atrasada{% elif transacao.data_vencimento == today %}vence hoje{% else %}conta em dia{% endif %}</p>{% if transacao.criado_por %}<p class="text-xs text-slate-500 mt-1">Lancado por {{ transacao.criado_por.get_full_name|default:transacao.criado_por.username }}</p>{% endif %}</div><div class="text-right"><strong class="block">R$ {{ transacao.valor_parcela|localize }}</strong>{% if not eh_subusuario %}<a href="{% url 'transacao_concluir' transacao.pk %}" class="mt-2 inline-block text-xs font-semibold text-moss hover:underline">{% if transacao.tipo == 'receita' %}Confirmar recebimento{% elif transacao.parcelado %}Concluir parcela{% else %}Concluir despesa{% endif %}</a>{% endif %}</div></div>{% endfor %}
       </div>
     </section>
     {% endif %}
 
-    {% if planejamentos %}
+    {% if planejamentos and not eh_subusuario %}
     <section class="mb-8">
       <div class="flex items-center justify-between mb-4"><h2 class="text-xl font-bold">Seus planejamentos</h2><a href="{% url 'planejamentos' %}" class="text-sm font-semibold text-moss hover:underline">Ver todos</a></div>
       <div class="grid md:grid-cols-3 gap-4">
@@ -63,22 +67,20 @@
 
     <section class="grid xl:grid-cols-[1.3fr_1fr] gap-8 mb-8">
       <div>
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Onde voce mais gastou</h2><span class="text-sm text-slate-400">{{ mes_atual }}</span></div>
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Receitas por tipo</h2><span class="text-sm text-slate-400">{{ mes_atual }}</span></div>
         <div class="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6">
-          {% for item in despesas_categoria %}
-          <div class="mb-5 last:mb-0">
-            <div class="flex justify-between gap-4 text-sm mb-2"><span class="font-semibold">{{ item.categoria__nome }}</span><strong>R$ {{ item.total|localize }}</strong></div>
-            <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-coral" style="width: {% widthratio item.total total_despesas 100 %}%"></div></div>
-          </div>
-          {% empty %}<p class="text-slate-500 py-5">Ainda nao existem despesas categorizadas neste mes.</p>{% endfor %}
+          {% for item in receitas_categoria %}
+            <div class="mb-5 last:mb-0">
+              <div class="flex justify-between gap-4 text-sm mb-2"><span class="font-semibold">{{ item.categoria__nome }}</span><strong>R$ {{ item.total|localize }}</strong></div>
+              <div class="h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-moss" style="width: {% widthratio item.total total_receitas 100 %}%"></div></div>
+            </div>
+          {% empty %}<p class="text-slate-500">Ainda nao existem receitas por tipo neste mes.</p>{% endfor %}
         </div>
       </div>
       <div>
-        <h2 class="text-xl font-bold mb-4">Como se organizar</h2>
+        <div class="flex items-center justify-between mb-4"><h2 class="text-xl font-bold">Saldo das contas</h2><a href="{% url 'cadastros_financeiros' %}" class="text-sm font-semibold text-moss hover:underline">Gerenciar</a></div>
         <div class="rounded-2xl bg-mint p-5 sm:p-6 text-ink">
-          <p class="text-sm font-semibold text-moss uppercase tracking-wider mb-4">Leitura do seu mes</p>
-          {% for dica in dicas_organizacao %}<div class="flex gap-3 py-3 border-b border-moss/10 last:border-0"><span class="text-moss font-bold">✓</span><p class="text-sm leading-6">{{ dica }}</p></div>{% endfor %}
-          {% if maior_categoria %}<p class="text-xs text-moss/70 mt-5">Prioridade: acompanhe {{ maior_categoria.categoria__nome }} antes de assumir novas parcelas.</p>{% endif %}
+          {% for conta in contas_financeiras %}<div class="flex justify-between gap-3 py-3 border-b border-moss/10 last:border-0"><span class="font-semibold">{{ conta.nome }}</span><strong class="{% if conta.saldo < 0 %}text-coral{% else %}text-moss{% endif %}">R$ {{ conta.saldo|localize }}</strong></div>{% empty %}<p class="text-sm text-slate-600">Cadastre uma conta para acompanhar entradas e saidas.</p>{% endfor %}
         </div>
       </div>
     </section>
@@ -87,7 +89,7 @@
       <section><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Lancamentos recentes</h2><span class="text-sm text-slate-400">{{ mes_atual }}</span></div>
         <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden">
           <div class="max-h-[28rem] overflow-y-auto overscroll-contain">
-          {% for transacao in transacoes %}<div class="flex items-center justify-between gap-4 p-4 sm:p-5 border-b last:border-0 border-slate-100"><div class="flex items-center gap-3 min-w-0"><div class="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center {% if transacao.tipo == 'despesa' %}bg-red-50 text-coral{% else %}bg-mint text-moss{% endif %}">{% if transacao.tipo == 'despesa' %}-{% else %}+{% endif %}</div><div class="min-w-0"><p class="font-semibold truncate">{{ transacao.descricao }}</p><p class="text-xs text-slate-400 mt-1">{{ transacao.data_vencimento|date:'d/m/Y' }} · {{ transacao.get_status_display }}{% if transacao.categoria %} · {{ transacao.categoria.nome }}{% endif %} · {{ transacao.get_forma_pagamento_display }}{% if transacao.parcelado %} · {{ transacao.parcelas_pagas }}/{{ transacao.numero_parcelas }} parcelas · R$ {{ transacao.valor_parcela|localize }} cada{% endif %}</p></div></div><div class="text-right shrink-0"><p class="font-bold">R$ {{ transacao.valor_pago|localize }} / R$ {{ transacao.valor|localize }}</p><div class="flex gap-2 justify-end mt-1"><a href="{% url 'transacao_editar' transacao.pk %}" class="text-xs text-moss hover:underline">Editar</a>{% if transacao.status == 'pendente' %}<form method="post" action="{% url 'transacao_concluir' transacao.pk %}">{% csrf_token %}<button class="text-xs text-moss hover:underline">{% if transacao.tipo == 'receita' %}Recebi{% else %}Baixar{% endif %}</button></form>{% endif %}<form method="post" action="{% url 'transacao_excluir' transacao.pk %}">{% csrf_token %}<button class="text-xs text-coral hover:underline">Excluir</button></form></div></div></div>{% empty %}<div class="p-10 text-center text-slate-500">Nenhuma transacao cadastrada ainda.</div>{% endfor %}
+          {% for transacao in transacoes %}<div class="flex items-center justify-between gap-4 p-4 sm:p-5 border-b last:border-0 border-slate-100"><div class="flex items-center gap-3 min-w-0"><div class="h-10 w-10 shrink-0 rounded-xl flex items-center justify-center {% if transacao.tipo == 'despesa' %}bg-red-50 text-coral{% else %}bg-mint text-moss{% endif %}">{% if transacao.tipo == 'despesa' %}-{% else %}+{% endif %}</div><div class="min-w-0"><p class="font-semibold truncate">{{ transacao.descricao }}</p><p class="text-xs text-slate-400 mt-1">{{ transacao.data_vencimento|date:'d/m/Y' }} · {{ transacao.get_status_display }}{% if transacao.categoria and transacao.tipo == 'receita' %} · {{ transacao.categoria.nome }}{% endif %} · {{ transacao.get_forma_pagamento_display }}{% if transacao.parcelado %} · {{ transacao.parcelas_pagas }}/{{ transacao.numero_parcelas }} parcelas · R$ {{ transacao.valor_parcela|localize }} cada{% endif %}{% if transacao.conta_origem %} · {{ transacao.conta_origem.nome }}{% endif %}</p>{% if transacao.criado_por %}<p class="text-xs text-slate-500 mt-1">Lancado por {{ transacao.criado_por.get_full_name|default:transacao.criado_por.username }}</p>{% endif %}</div></div><div class="text-right shrink-0"><p class="font-bold">R$ {{ transacao.valor_pago|localize }} / R$ {{ transacao.valor|localize }}</p>{% if not eh_subusuario %}<div class="flex gap-2 justify-end mt-1"><a href="{% url 'transacao_editar' transacao.pk %}" class="text-xs text-moss hover:underline">Editar</a>{% if transacao.status == 'pendente' %}<a href="{% url 'transacao_concluir' transacao.pk %}" class="text-xs text-moss hover:underline">{% if transacao.tipo == 'receita' %}Receber{% else %}Baixar{% endif %}</a>{% endif %}<form method="post" action="{% url 'transacao_excluir' transacao.pk %}">{% csrf_token %}<button class="text-xs text-coral hover:underline">Excluir</button></form></div>{% endif %}</div></div>{% empty %}<div class="p-10 text-center text-slate-500">Nenhuma transacao cadastrada ainda.</div>{% endfor %}
           </div>
         </div>
       </section>

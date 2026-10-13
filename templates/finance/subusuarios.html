@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Subusuarios | Nexsaldo{% endblock %}
+{% block content %}
+<main class="min-h-screen p-5 sm:p-10 bg-paper">
+  <div class="max-w-4xl mx-auto">
+    <a href="{% url 'dashboard' %}" class="text-sm text-moss hover:underline">← Voltar ao dashboard</a>
+    <header class="mt-8 mb-8">
+      <p class="text-sm text-moss font-semibold mb-2">Acesso da equipe</p>
+      <h1 class="text-4xl">Subusuarios</h1>
+      <p class="text-slate-500 mt-2">Cada subusuario pode consultar o painel e criar lancamentos na sua conta.</p>
+    </header>
+
+    {% if messages %}{% for message in messages %}<div class="mb-4 rounded-xl bg-mint px-4 py-3 text-sm font-medium text-moss">{{ message }}</div>{% endfor %}{% endif %}
+
+    <section class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 mb-8">
+      <h2 class="text-xl font-bold mb-5">Criar subusuario</h2>
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label for="{{ field.id_for_label }}" class="block text-sm font-semibold mb-2">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<p class="text-xs text-slate-500 mt-1">{{ field.help_text|safe }}</p>{% endif %}
+            {% if field.errors %}<p class="text-sm text-red-600 mt-1">{{ field.errors|striptags }}</p>{% endif %}
+          </div>
+        {% endfor %}
+        <button class="rounded-xl bg-moss px-5 py-3 font-semibold text-white hover:bg-ink">Criar acesso</button>
+      </form>
+    </section>
+
+    <section class="rounded-2xl bg-white border border-slate-200 p-6 sm:p-8">
+      <h2 class="text-xl font-bold mb-5">Acessos cadastrados</h2>
+      <div class="divide-y divide-slate-100">
+        {% for perfil in subusuarios %}
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+            <div>
+              <p class="font-semibold">{{ perfil.usuario.get_full_name|default:perfil.usuario.username }}</p>
+              <p class="text-sm text-slate-500">@{{ perfil.usuario.username }}{% if perfil.usuario.email %} · {{ perfil.usuario.email }}{% endif %}</p>
+              <p class="text-xs mt-1 {% if perfil.usuario.is_active %}text-moss{% else %}text-coral{% endif %}">{% if perfil.usuario.is_active %}Ativo{% else %}Bloqueado{% endif %}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <form method="post" action="{% url 'subusuario_alternar_bloqueio' perfil.pk %}">
+                {% csrf_token %}
+                <button class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">{% if perfil.usuario.is_active %}Bloquear{% else %}Desbloquear{% endif %}</button>
+              </form>
+              <form method="post" action="{% url 'subusuario_excluir' perfil.pk %}" onsubmit="return confirm('Excluir este subusuario?');">
+                {% csrf_token %}
+                <button class="rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-coral hover:bg-red-50">Excluir</button>
+              </form>
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-sm text-slate-500">Voce ainda nao criou subusuarios.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</main>
+<style>input { width: 100%; border: 1px solid #e2e8f0; border-radius: .85rem; padding: .75rem 1rem; background: white; outline: none; } input:focus { border-color: #0f766e; box-shadow: 0 0 0 3px #d1fae5; }</style>
+{% endblock %}
